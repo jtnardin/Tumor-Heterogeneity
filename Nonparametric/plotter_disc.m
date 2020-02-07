@@ -1,50 +1,60 @@
-function plotter_disc(param,fullsol,agg_sol,real_data,optweight)
-% Driver for Optimization Stuff %
+function plotter_disc(param,real_data,optweight)
+% PLOTTER_DISC plots the best discrete approximation versus the correct
+% underlying distribution (Fig 6 in the associated paper)
+% 
+%    INPUTS:
+%        param: a variable that contains the following information:
+%            -param.nodesr: the vector of nodes for parameter 'r' for the
+%                optimization 
+%        real_data: the filename where the 'ground truth' underlying 
+%            distribution is 
+%        optweight: the optimum
+%
+%    OUTPUTS:
+%        A figure displaying the predicted best discrete approximation
+%            versus the actual underlying distribution, as seen in Figure 6
+%            in the associated tumor heterogeneity paper.
+%
+% Written by Erica Rutter (January 2020)
 
-%% load the acutla rho values and bin according to 'best fit'
+
+%% load the actual rho values and bin according to 'best fit'
 load(real_data,'rho_vals');
-hist_vals1=0;
-hist_vals2=linspace(0.5*10^-3,5.5*10^-3,50);
+hist_vals2=linspace(0.5*10^-3,1.5*10^-3,10);
 hist_vals3=linspace(.02,.06,10);
-real_rho2=histc(rho_vals,hist_vals2);
-real_rho3=histc(rho_vals,hist_vals3);
-histy=histc(optweight,hist_vals2)
 
-%real_rho=real_rho/sum(real_rho);
+% Find locations that match to the histogram locations
+[~,a] = min(abs(hist_vals2(1)-param.nodesr));
+[~,b] = min(abs(hist_vals2(end)-param.nodesr));
+[~,c] = min(abs(hist_vals3(1)-param.nodesr));
+[~,d] = min(abs(hist_vals3(end)-param.nodesr));
+
+% find out how much proportion is given in the histogram intervals. This is
+% to rescale solutions after interpolation
+prop_2=sum(optweight(a:b));
+prop_3=sum(optweight(c:d));
+
 figure;
-histogram(rho_vals,hist_vals2)
-%plot(param.nodesr,real_rho,'k+-')
-%hold on
-%plot(param.nodesr,optweight,'r*-')
-keyboard
-%% Plot the pdfs
-figure;
-%subplot(2,1,1)
-[hAx,hLine1,hLine2] =plotyy(histy,real_rho,param.nodesr,optweight);
-xlim([min(param.nodesr),max(param.nodesr)])
-xlim(hAx(2), [min(param.nodesr),max(param.nodesr)])
-set(hAx(2),'XTickLabel',[])
-set(hAx(2),'FontSize',24)
-%set(hAx(2),'xlim',([
-legend('Actual','Estimated','Location','NorthEast')
+subplot(1,2,1)
+histogram(rho_vals,hist_vals2,'facecolor',[.78,.74,.86])
+% interpolate the optimal weights into the histogram bin intervals, then
+% scale
+zz=interp1(param.nodesr,optweight,hist_vals2);
+zz=zz/sum(zz)*prop_2*length(rho_vals);
 set(gca,'Fontsize',24,'linewidth',2)
-%title([distributions{dist2},' with ',int2str(nr),' nodes'])
-xlabel('\rho','Fontsize',24)
-ylabel('Probability','Fontsize',24)
+ylabel('Frequency')
+hold on
+plot(hist_vals2,zz,'r*--','linewidth',2)
+xlabel('\rho_0')
+
+subplot(1,2,2)
+histogram(rho_vals,hist_vals3,'facecolor',[.78,.74,.86])
+% interpolate the optimal weights into the 2nd histogram bin intervals, then
+% scale
+zz=interp1(param.nodesr,optweight,hist_vals3);
+zz=zz/sum(zz)*prop_3*length(rho_vals);
 set(gca,'Fontsize',24,'linewidth',2)
-set(hLine2,'LineStyle','--','Marker','+','LineWidth',2,'color',[0.5,0.1,0.1])
-%ylim(hAx(2),[0,max(max(optweights_disc(:,1:best_nr_disc,1)))])
-set(hLine1,'LineStyle','--','Marker','*','LineWidth',2)
-
-
-%title(strcat('D ',distributions{dist1},' r ',distributions{dist2},' with ',int2str(100*err_level),'% error, discrete 1 xscale ',int2str(x_scale),' tscale ',int2str(t_scale)))
-keyboard;
-titles=strcat('Figures/Best_discrete_',int2str(1),'_pdf');
-print(titles,'-dpdf')
-savefig(strcat(titles,'.fig'))
-%% Plot the solutions if wanted
-
-%if do_plot==1
-%    plot_fits(persol,fullsol,optweights,param,t_scale,x_scale)
-%end
-%% perform UQ 
+hold on
+plot(hist_vals3,zz,'r*--','linewidth',2)
+legend('\rho_k',['Discrete' newline 'Approximation'])
+xlabel('\rho_M')
