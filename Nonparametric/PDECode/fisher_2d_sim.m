@@ -30,26 +30,21 @@ function yd = fisher_2d_sim(phi,X)
         [X_sim,Y_sim] = meshgrid(x_sim,y_sim);
         
         % %  Set up initial condition
-        %s  = 0.015;    % Std. dev of initial condition
-        %I0 = 1;        % Integral of intial cell density ("number of initial cells")
-        %initcond = @(x,y) 10*exp(-((x-0.5).^2+(y-0.5).^2)/(2*s^2))/(2*pi*s^2);
-        %u0 = initcond(X_sim(:,:,1),Y_sim(:,:,1));
-        s  = 0.01;    % Std. dev of initial condition
-        I0 = 5;        % Integral of intial cell density ("number of initial cells")
-        %x_c=0.5;
-        %y_c=0.5;
-        %initcond = @(x,y,xc,yc) I0*exp(-((x-xc).^2+(y-yc).^2)/(2*s^2))/(2*pi*s^2);
+        s  = 0.015;    % Std. dev of initial condition
+        I0 = 1;        % Integral of intial cell density ("number of initial cells")
         initcond = @(x,y) I0*exp(-((x-0.5).^2+(y-0.5).^2)/(2*s^2))/(2*pi*s^2);
+        u0 = initcond(X_sim(:,:,1),Y_sim(:,:,1));
+
 
         u0 = initcond(X_sim(:,:,1),Y_sim(:,:,1));    
         dx = x_sim(2) - x_sim(1);
         
         
         if length(phi) == 1
-            odefun = @(T,Y)myODEFun2D(Y,1e-6,phi,6e8,dx,length(x_sim));
+            odefun = @(T,Y)myODEFun2D(Y,1e-6,phi,10,dx,length(x_sim));
             [T,Y] = ode45(odefun,t,u0(:));
         elseif length(phi) == 2
-            odefun = @(T,Y)myODEFun2D(Y,phi(1),phi(2),6e8,dx,length(x_sim));
+            odefun = @(T,Y)myODEFun2D(Y,phi(1),phi(2),10,dx,length(x_sim));
             [T,Y] = ode45(odefun,t,u0(:));
         end
         
