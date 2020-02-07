@@ -83,6 +83,6 @@ disp('plotting!')
 if is_discrete==1
     plotter_disc(param,real_data,optweight);
 else
-    plotter_spline(param,fullsol,agg_sol,real_data,optweight);
+    plotter_spline(param,real_data,fullsol,optweight);
 end
 
