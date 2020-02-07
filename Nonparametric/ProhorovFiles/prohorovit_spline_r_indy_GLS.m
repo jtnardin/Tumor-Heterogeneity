@@ -1,36 +1,45 @@
 function [optweight,current_err,converge_flag]=prohorovit_spline_r_indy_GLS(titles,param,fullsol,agg_sol,init_guess)
 %
-% PROHOROVIT_SPLINE_RK_INDY_GLS performs the inverse problem for 2
-% paramters for the spline case of the Prohorov Metric. This assumes the
-% existence of the following items:
+% PROHOROVIT_SPLINE_RK_INDY_GLS finds the optimal weights for the inverse 
+% problem for the parameter 'r' in the reaction-diffusion equation under 
+% the Prohorov Metric Framework using continuous/spline approximations.
 %
-%    The solution you are trying to match (in this case it is called
-%        K_dist1_dist2_joint_longtime_smooth_error_5.mat)
+%    INPUTS:
+%        title: the title of the matlab file to save information to
+%        param: a variable that contains the following information:
+%            -param.nodesr: the vector of nodes for parameter 'r' for the
+%                optimization 
+%            -param.bsr: the computational/numerical mesh of the parameter 
+%                'r' (for the precomputed solutions)
+%        fullsol: the precomputed solution 
+%        agg_sol: the aggregate 'data' we are comparing with
+%        init_guess: determining whether use a uniform distribution as an
+%            initial guess at parameter distribution (1) or use random 
+%            numbers (0)
 %
-%    Precomputed solutions to your differential equation at all the
-%    quadrature nodes (in this case called
-%    'fullsol_2par_longtime_with100.mat')
+%    OUTPUTS:
+%        optweight: the optimal weights for the parameter mesh 'r'
+%        current_err: the value of the error (OLS/GLS) for the optimal
+%            weighted parameter 'r'
+%        converge_flag: the converge flag given out by fmincon (0 signifies
+%            minima found)
+%        title: a mat-file with the optimal weight (optweight), the best
+%            error (current_err), the spatiotemporal solution using
+%            the optweights, and the converge flag for the optimization.
 %
-% This Function creates the following files:
-%    outname: For each iteration of the GLS algorithm, I save the current
-%        weights, the previous weights, the soltuion to the differential
-%        equation, and the weights for the GLS algorithm
-%
-%
+
 % Written by Erica Rutter (July 2017)
 
 %% initialization of the algorithm and data
 
 % Define model parameters
 nr = length(param.nodesr);   % nodes
-nD = 1;
 Nr=length(param.bsr);   % quadrature nodes
-maxdim=max(nr,nD);
-numpar=1;
 
 % Determine if scaling the solutions in x and t.
 [x,y,t]=size(agg_sol);
-% Calculate the splines for parameter 1
+
+% Calculate the splines for the parameter 'r' over the mesh
 intoverr = zeros(length(param.nodesr),x,y,t);
 myintr = zeros(1,length(param.nodesr));
 fullljsr=zeros(length(param.nodesr),Nr);
@@ -57,13 +66,15 @@ end
 
 % These are the constrains for the optimization problem to ensure that the
 % sum of the weights/splines add to 1 and are nonnegative
-Aeq=zeros(numpar,numpar*maxdim);
-Aeq(1,1:nr)=myintr;
-beq = ones(numpar,1);
-lb = zeros(numpar*maxdim,1);
-ub = zeros(numpar*maxdim,1);
-ub(1:nr) = 10^9*length(param.nodesr);
-r0=zeros(numpar*maxdim,1);
+Aeq=zeros(1,nr);
+Aeq(1,:)=myintr;
+beq = ones(1,1);
+
+% specify bounds. must be nonnegative 
+lb = zeros(nr,1);
+ub = zeros(nr,1);
+ub(1:nr) = 10^9;
+r0=zeros(nr,1);
 
 if init_guess==1
     % initial guess is random
@@ -78,29 +89,21 @@ end
 
 % initial solve to pass through 
 intoverr=sparse(reshape(intoverr,[length(param.nodesr),numel(intoverr)/length(param.nodesr)]));
-weights=ones(size(agg_sol));
-optweight=r0;
 
+weights=ones(size(agg_sol)); %Assuming an ordinary least squars approach
 
-% For the regular algorithm
+% Fit the parameters
 errsy = @(r)errorfunc_discrete_sparse(r,intoverr,agg_sol,weights);
 options = optimset('MaxIter',25000,'MaxFunEvals',500000,'Display', 'None');
-[optweight,~,converge_flag,~]=fmincon(errsy, optweight, [],[],Aeq,beq,lb,ub,[],options);
+[optweight,~,converge_flag,~]=fmincon(errsy, r0, [],[],Aeq,beq,lb,ub,[],options);
 if converge_flag==0
     disp('Did not converge')
 end
 % finds the error and best approximation for the optimized weights 
 [current_err,best_approx] = errorfunc_discrete_sparse(optweight,intoverr,agg_sol,weights);
 
-
 %% Saving Information
-% If you did not converge, return
-
-if (ii>=maxits)&&(parchange>partol)
-    disp('Did not converge')
-    converge_flag=0;
-end
-save(titles,'optweight','current_err','best_approx','fullljsr','converge_flag')
+%save(titles,'optweight','current_err','best_approx','fullljsr','converge_flag')
 
 end
 

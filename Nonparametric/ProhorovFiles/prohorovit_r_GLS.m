@@ -1,47 +1,59 @@
-function [optweight,current_err,converge_flag]= prohorovit_r_GLS(titles,param,fullsol,persol,init_guess)
+function [optweight,current_err,converge_flag]= prohorovit_r_GLS(titles,param,fullsol,agg_sol,init_guess)
 %
-% PROHOROVIT_2PAR_GLS performs the inverse problem for 2
-% paramters for the discrete case of the Prohorov Metric. This assumes the
-% existence of the following items:
+% PROHOROVIT_R_GLS finds the optimal weights for the inverse problem for 
+% the parameter 'r' in the reaction-diffuion equation under the Prohorov
+% Metric Framework using discrete approximations.
 %
-%    The solution you are trying to match (in this case it is called
-%        K_dist1_dist2_joint_longtime_smooth_error_5.mat)
+%    INPUTS:
+%        title: the title of the matlab file to save information to
+%        param: a variable that contains the following information:
+%            -param.nodesr: the vector of nodes for parameter 'r' for the
+%                optimization 
+%        fullsol: the precomputed solution for the current number of
+%            parameter nodes
+%        agg_sol: the aggregate 'data' we are comparing with
+%        init_guess: determining whether use a uniform distribution as an
+%            initial guess at parameter distribution (1) or use random 
+%            numbers (0)
 %
-%    Precomputed solutions to your differential equation at all the
-%    quadrature nodes (in this case called
-%    'fullsol_2par_longtime_with100.mat')
+%    OUTPUTS:
+%        optweight: the optimal weights for the parameter mesh 'r'
+%        current_err: the value of the error (OLS/GLS) for the optimal
+%            weighted parameter 'r'
+%        converge_flag: the converge flag given out by fmincon (0 signifies
+%            minima found)
+%        title: a mat-file with the optimal weight (optweight), the best
+%            error (current_err), the spatiotemporal solution using
+%            the optweights, and the converge flag for the optimization.
 %
-% This Function creates the following files:
-%    outname: For each iteration of the GLS algorithm, I save the current
-%        weights, the previous weights, the soltuion to the differential
-%        equation, and the weights for the GLS algorithm
-%
-%
+
 % Written by Erica Rutter (July 2017)
 
 %% Initialize the inverse problem
 
-% define model parameters such as the nodes 
-numpar=1;
-nr = length(param.nodesr);   % nodes
-nD = 1;
-maxdim=max(nr,nD);
+% define model parameters such as the number of nodes estimated 
+nr = length(param.nodesr); 
 
 %% Constrained Optimization
 
-% Constraints -- ensure that sum(ri)=1, sum(Ki)=1. Note: fmincon requires A
-% to have same nubmer of r0 as a columna vector
-Aeq=zeros(numpar,numpar*maxdim);
-Aeq(1,1:nr)=1;
-beq = ones(numpar,1);
-lb = zeros(numpar*maxdim,1); % weights cannot be nonnegative
-ub = zeros(numpar*maxdim,1);
+% Constraints -- ensure that sum(ri)=1. Note: fmincon requires A
+% to have same number of r0 as a column vector
+Aeq=zeros(1,nr);
+Aeq(1,:)=1;
+beq = ones(1,1);
+
+% specify bounds. must be nonnegative and cant be >1
+lb = zeros(nr,1); 
+ub = zeros(nr,1); 
 ub(1:nr) = 1;
-r0=zeros(numpar*maxdim,1);
+r0=zeros(nr,1);
+
 if init_guess==1
+    % initial guess is random.
     r0(1:nr)=rand(nr,1);
-    r0(1:nr)=r0(1:nr)/sum(r0(1:nr));                         % initial guess is random.
-elseif init_guess==0 % uniform initial guess
+    r0(1:nr)=r0(1:nr)/sum(r0(1:nr));                         
+elseif init_guess==0 
+    % uniform initial guess
     r0(1:nr)=1/nr;
 end
 
@@ -49,23 +61,17 @@ end
 fullsol=permute(fullsol,[4,1,2,3]);
 fullsol=reshape(fullsol,[length(param.nodesr),numel(fullsol)/length(param.nodesr)]);
 
-weights=ones(size(persol)); % for the statistical error model.
-optweight=r0;
+weights=ones(size(agg_sol)); % Assuming ordinary least squares (OLS)
 
-errsy = @(r)errorfunc_discrete_sparse(r,fullsol,persol,weights);
-options = optimset('MaxIter',25000,'MaxFunEvals',50000,'Display', 'Off');
-[optweight,~,converge_flag,~]=fmincon(errsy, optweight, [],[],Aeq,beq,lb,ub,[],options);
+errsy = @(r)errorfunc_discrete_sparse(r,fullsol,agg_sol,weights);
+options = optimset('MaxIter',25000,'MaxFunEvals',50000,'Display', 'Iter');
+[optweight,~,converge_flag,~]=fmincon(errsy, r0, [],[],Aeq,beq,lb,ub,[],options);
 if converge_flag==0
     disp('Did not converge')
 end
-[current_err,best_approx] = errorfunc_discrete_sparse(optweight,fullsol,persol,weights);
-
+[current_err,~] = errorfunc_discrete_sparse(optweight,fullsol,agg_sol,weights);
 %% Save output 
-if (ii>=maxits)&&(parchange>partol)
-    disp('Did not converge')
-    converge_flag=0;
-end
-save(titles,'optweight','current_err','best_approx','converge_flag')
+%save(titles,'optweight','current_err','best_approx','converge_flag')
 
 end
 
