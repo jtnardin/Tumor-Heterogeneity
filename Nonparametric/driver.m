@@ -80,9 +80,4 @@ param.bsr=linspace(rmin,rmax,Nr);
 load(precomputed_sol,'fullsol')
 
 disp('plotting!')
-if is_discrete==1
-    plotter_disc(param,real_data,optweight);
-else
-    plotter_spline(param,real_data,fullsol,optweight);
-end
-
+plotter_disc(param,real_data,optweight);
