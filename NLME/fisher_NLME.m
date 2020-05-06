@@ -45,13 +45,13 @@ end
 
 %fixed design matrix
 for i = 1:N
-    A(:,:,i) = [1 metast_ind(i) 0 0 ;0 0 1 metast_ind(i) ];
+    A(:,:,i) = [1 metast_ind(i)];
 end
 %random design matrix is the same
 B = A;
 
 % initial guesses for parameter estimates
-beta0 = [1e-6, 0, 0.02,.02]';
+beta0 = [0.02,.02]';
 
 % If the tolerance is set too low, then the computation may take a long
 % time. the current setting (1e0) takes about 4 days on one CPU.
