@@ -1,7 +1,19 @@
-%fisher_NLME written 12-6-2019 to peformed NLME on a dataset of
-%several fisher KPP simulaions with 2 subgroups, benign and malignant, as
-%part of "A tutorial Review of Mathematical Techniques for Quantifying 
-%Tumor Heterogeneity" by Everett et al. 
+% -------------------------------------------------------------------------
+% ****************** Tumor Heterogeneity Package **************************
+% File:     fisher_NLME.m 
+% Paper:    Everett et al. 'A tutorial review of mathematical techniques 
+%           for quantifying tumor heterogeneity'. Math. Biosci. Eng, 2020
+%           doi: 10.3934/mbe.2020207
+% Date:     12-2019
+% Info:     Script to peform NLME on a dataset of several fisher KPP
+%           simulations with 2 subgroups, benign and malignant                     
+% Inputs:         
+%               
+% Contact:  nph@email.arizona.edu, jtnardin@ncsu.edu 
+% This software is in the public domain, furnished "as is", without 
+% technical support, and with no warranty, express or implied, as to its 
+% usefulness for any purpose.
+% -------------------------------------------------------------------------
 
 clear all; clc
 
@@ -9,7 +21,7 @@ disp('Simulation started ')
 disp(datetime('now'))
 
 %load in VP data with rho varying
-load('bimodal_rho_const_VP.mat')
+load('Common/datasets/bimodal_rho_const_VP.mat')
 
 
 %%% # patients
@@ -41,8 +53,6 @@ for i = 1:N
     end
 end
 
-
-
 %fixed design matrix
 for i = 1:N
     A(:,:,i) = [1 metast_ind(i)];
@@ -55,15 +65,15 @@ beta0 = [0.02,.02]';
 
 % If the tolerance is set too low, then the computation may take a long
 % time. the current setting (1e0) takes about 4 days on one CPU.
-opt = statset('TolFun',1e0);
+opt = statset('TolFun',1e0,'Display','iter');
 
 %the model is the 2d Fisher-KPP
 model = @(phi,t) fisher_2d_sim(phi,t);
 
 tic
 [beta,PSI,stats,b] = nlmefit(X,y_vec,NUMS,[],model,beta0,'FEGroupDesign',A,...
-    'REGroupDesign',B,'Options',opt);
+    'REGroupDesign',B,'Options',opt,'OptimFun','fminunc');
 toc
 
 %save 
-save('VP_results_rho_const_D_known.mat','beta','PSI','stats','b')
+save(sprintf('VP_results_rho_const_D_known_%s.mat',datestr(now,'mm-dd-yyyy-HH-MM')),'beta','PSI','stats','b')

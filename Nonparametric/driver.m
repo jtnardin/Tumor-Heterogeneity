@@ -12,7 +12,7 @@ function driver(is_discrete)
 % Written by Erica Rutter (July 2019)
 
 %% declare variables and data
-real_data ='DataGeneration/bimodal_rho_const_VP.mat';
+real_data ='Common/datasets/bimodal_rho_const_VP.mat';
 
 Nr = 500; % quadrature nodes (if using splines)
 nrs=10:10:500;    % number of nodes, M
@@ -33,7 +33,7 @@ X=[ts,param.xs,param.ys];
 if is_discrete==1
     for nr_val=1:length(nrs)
         Nr=nrs(nr_val);
-        precomputed_sol = strcat('PrecomputedSolutions/fullsol_2par_longtime_with_nr_',int2str(Nr),'.mat');
+        precomputed_sol = strcat('Nonparametric/PrecomputedSolutions/fullsol_2par_longtime_with_nr_',int2str(Nr),'.mat');
         if ~exist(precomputed_sol, 'file')
             disp('Precomputing Solutions')
             param.bsr=linspace(rmin,rmax,Nr);
@@ -41,7 +41,7 @@ if is_discrete==1
         end
     end
 else
-    precomputed_sol = strcat('PrecomputedSolutions/fullsol_2par_longtime_with_nr_',int2str(Nr),'.mat');
+    precomputed_sol = strcat('Nonparametric/PrecomputedSolutions/fullsol_2par_longtime_with_nr_',int2str(Nr),'.mat');
     if ~exist(precomputed_sol,'file')
         disp('Precomputing solutions')
         param.bsr=linspace(rmin,rmax,Nr);

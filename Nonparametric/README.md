@@ -1,5 +1,6 @@
+#Tumor-Heterogeneity: Nonparametric Estimation
 
-The files necessary for the non-parametric estimation. There are several directories present:
+There are several directories present:
 
 DataGeneration: This is where the data you are trying to fit goes
 
