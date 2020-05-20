@@ -41,8 +41,6 @@ function n = Solve(obj,T)
         Dy = obj.D.Eval([xx(:),yy(:)+hy/2],[nx,ny]);  Dy = Dy(2:end-1,1:end-1);
         Dcell{1} = Dx;
         Dcell{2} = Dy;
-        disp(size(Dx))
-        disp(size(Dy))
     elseif(size(obj.D,1)==nx&&size(obj.D,2)==ny)
         Dcell{1} = obj.D(1:end-1,2:end-1); 
         Dcell{2} = obj.D(2:end-1,1:end-1); 
